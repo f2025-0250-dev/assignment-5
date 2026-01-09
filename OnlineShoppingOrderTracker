@@ -1,0 +1,126 @@
+#include <iostream>
+#include <vector>
+#include <fstream>
+#include <string>
+#include <iomanip>
+
+using namespace std;
+struct Order {
+    int orderID;
+    string customerName;
+    int numberOfItems;
+    double pricePerItem;
+    double calculateTotal() const {
+        return numberOfItems * pricePerItem;
+    }
+};
+void inputOrders(vector<Order>& orders);
+void savePriorityOrders(const vector<Order>& orders, double threshold = 5000.0); 
+void displayPriorityOrders();
+int main() {
+    vector<Order> orders;
+    cout << "=== ONLINE SHOPPING ORDER TRACKER ===\n\n";
+    inputOrders(orders);
+    if (orders.empty()) {
+        cout << "\nNo orders entered. Program exiting.\n";
+        return 0;
+    }
+    cout << "\n=== ALL ORDERS SUMMARY ===\n";
+    cout << left << setw(12) << "Order ID"
+         << left << setw(20) << "Customer Name"
+         << right << setw(10) << "Items"
+         << right << setw(12) << "Price/Item"
+         << right << setw(15) << "Total Amount" << endl;
+    cout << string(69, '-') << endl;
+    for (const auto& order : orders) {
+        cout << left << setw(12) << order.orderID
+             << left << setw(20) << order.customerName
+             << right << setw(10) << order.numberOfItems
+             << right << setw(12) << fixed << setprecision(2) << order.pricePerItem
+             << right << setw(15) << fixed << setprecision(2) << order.calculateTotal() << endl;
+    }
+    double threshold;
+    cout << "\nEnter threshold for priority orders (default: $5000): $";
+    cin >> threshold;
+    savePriorityOrders(orders, threshold);
+    cout << "\n=== PRIORITY ORDERS FROM FILE ===\n";
+    displayPriorityOrders();
+    return 0;
+}
+void inputOrders(vector<Order>& orders) {
+    int numOrders; 
+    cout << "Enter total number of orders: ";
+    cin >> numOrders;
+    cin.ignore();
+    for (int i = 0; i < numOrders; i++) {
+        Order order;
+        cout << "\n=== Order " << (i + 1) << " ===\n";
+        cout << "Enter Order ID: ";
+        cin >> order.orderID;
+        cin.ignore();
+        cout << "Enter Customer Name: ";
+        getline(cin, order.customerName);
+        do {
+            cout << "Enter Number of Items: ";
+            cin >> order.numberOfItems;
+            if (order.numberOfItems <= 0) {
+                cout << "Error: Number of items must be positive!\n";
+            }
+        } while (order.numberOfItems <= 0);
+        do {
+            cout << "Enter Price per Item: $";
+            cin >> order.pricePerItem;
+            if (order.pricePerItem <= 0) {
+                cout << "Error: Price must be positive!\n";
+            }
+        } while (order.pricePerItem <= 0);
+        orders.push_back(order);
+    }
+}
+void savePriorityOrders(const vector<Order>& orders, double threshold) {
+    ofstream outFile("priority_orders.txt");
+    if (!outFile) {
+        cout << "\nError: Could not open file for writing!\n";
+        return;
+    }
+    int priorityCount = 0;
+    outFile << "=== PRIORITY ORDERS (Total > $" << threshold << ") ===\n";
+    outFile << "Order ID,Customer Name,Number of Items,Price per Item,Total Amount\n";
+    for (const auto& order : orders) {
+        double totalAmount = order.calculateTotal();
+        if (totalAmount > threshold) {
+            outFile << order.orderID << ","
+                    << order.customerName << ","
+                    << order.numberOfItems << ","
+                    << fixed << setprecision(2) << order.pricePerItem << ","
+                    << fixed << setprecision(2) << totalAmount << "\n";
+            priorityCount++;
+        }
+    }
+    outFile.close();
+    if (priorityCount > 0) {
+        cout << "\nSaved " << priorityCount << " priority order(s) to 'priority_orders.txt'\n";
+    } else {
+        cout << "\nNo orders found with total amount greater than $" << threshold << "\n";
+    }
+}
+void displayPriorityOrders() {
+    ifstream inFile("priority_orders.txt");    
+    if (!inFile) {
+        cout << "\nError: Could not open 'priority_orders.txt' for reading!\n";
+        cout << "File may not exist or is empty.\n";
+        return;
+    }    
+    string line;
+    bool fileHasData = false;
+    while (getline(inFile, line)) {
+        cout << line << endl;
+        fileHasData = true;
+    }    
+    inFile.close();   
+    if (!fileHasData) {
+        cout << "No priority orders found.\n";
+    } else {
+        cout << "\n--- End of priority orders ---\n";
+    }
+}

@@ -1,0 +1,105 @@
+#include <iostream>
+#include <vector>
+#include <fstream>
+#include <string>
+#include <iomanip>  
+
+using namespace std;
+struct Employee {
+    int id;
+    string name;
+    double monthlySalary;
+    double getYearlySalary() const {
+        return monthlySalary * 12;
+    }
+};
+void inputemploy(vector<Employee>& employee) {
+    int numberOfEmployee;
+    cout << "Enter the number of total employees: ";
+    cin >> numberOfEmployee;
+    cin.ignore();
+    for (int i = 0; i < numberOfEmployee; i++) {
+        Employee emp;
+        cout << "==Enter the Employee " << i + 1 << "==" << endl;
+        cout << "Enter employee id: ";
+        cin >> emp.id;
+        cin.ignore();
+        cout << "Enter the employee name: ";
+        getline(cin, emp.name);
+        cout << "Enter the employee monthly salary: ";
+        cin >> emp.monthlySalary;
+        employee.push_back(emp);
+    }
+}
+void saveHighSalaryEmployees(const vector<Employee>& employee, double threshold) {
+    ofstream employees_file("high_salary.txt");
+    if (!employees_file) {
+        cout << "\nError: Could not open file for writing!\n";
+        return;
+    }
+    int count = 0;
+    employees_file << "ID , Name , Monthly Salary , Yearly Salary\n";
+    for (const auto& emp : employee) {
+        double yearlySalary = emp.getYearlySalary();
+        if (yearlySalary > threshold) {
+            employees_file << emp.id << ","
+                    << emp.name << ","
+                    << fixed << setprecision(2) << emp.monthlySalary << ","
+                    << fixed << setprecision(2) << yearlySalary << "\n";
+            count++;
+        }
+    }
+    employees_file.close();
+    if (count > 0) {
+        cout << "\nSuccessfully saved " << count << " employees to 'high_salary.txt'\n";
+    } else {
+        cout << "\nNo employees found with yearly salary above $" << threshold << "\n";
+    }
+}
+void readAndDisplayFile() {
+    ifstream display_employee("high_salary.txt");
+    if (!display_employee) {
+        cout << "\nError: Could not open 'high_salary.txt' for reading!\n";
+        cout << "The file may not exist or may be empty.\n";
+        return;
+    }
+    string line;
+    bool hasData = false;
+    while (getline(display_employee, line)) {
+        cout << line << endl;
+        hasData = true;
+    }
+    display_employee.close();
+    if (!hasData) {
+        cout << "The file is empty.\n";
+    }
+}
+int main() {
+    vector<Employee> employee;
+    cout << "=== EMPLOYEE SALARY MANAGEMENT SYSTEM ===\n\n";
+    inputemploy(employee);
+    if (employee.empty()) {
+        cout << "\nNo employees entered. Program exiting.\n";
+        return 0;
+    }
+    cout << "\n=== EMPLOYEE DETAILS ===\n";
+    cout << setw(10) << left << "ID" 
+         << setw(20) << left << "Name" 
+         << setw(15) << right << "Monthly Salary" 
+         << setw(15) << right << "Yearly Salary" << endl;
+    cout << string(60, '-') << endl;
+    for (const auto& emp : employee) {
+        cout << setw(10) << left << emp.id
+             << setw(20) << left << emp.name
+             << setw(15) << right << fixed << setprecision(2) << emp.monthlySalary
+             << setw(15) << right << fixed << setprecision(2) << emp.getYearlySalary() << endl;
+    }
+    double threshold;
+    cout << "\nEnter the yearly salary threshold: $";
+    cin >> threshold;
+    saveHighSalaryEmployees(employee, threshold);
+    cout << "\n=== HIGH SALARY EMPLOYEES FROM FILE ===\n";
+    readAndDisplayFile();
+    
+    return 0;
+}
